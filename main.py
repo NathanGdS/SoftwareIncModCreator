@@ -46,8 +46,8 @@ class ModCreatorApp:
     def _create_sidebar_buttons(self):
         self.buttons = {
             "Software Type": ctk.CTkButton(self.sidebar, text="Software Type", command=lambda: self.show_frame("Software Type")),
-            "Spec Features": ctk.CTkButton(self.sidebar, text="Spec Features", command=lambda: self.show_frame("Spec Features")),
-            "Sub Features": ctk.CTkButton(self.sidebar, text="Sub Features", command=lambda: self.show_frame("Sub Features")),
+            "Spec Features": ctk.CTkButton(self.sidebar, text="Spec Features", command=lambda: self.show_frame("Spec Features"), state="disabled"),
+            "Sub Features": ctk.CTkButton(self.sidebar, text="Sub Features", command=lambda: self.show_frame("Sub Features"), state="disabled"),
             "Export": ctk.CTkButton(self.sidebar, text="Export Mod", command=self.export_mod),
         }
 
@@ -83,23 +83,62 @@ class ModCreatorApp:
 
     def create_input_frame(self, title, fields):
         frame = ctk.CTkFrame(self.main_frame_container, corner_radius=15)
-
-        title_label = ctk.CTkLabel(frame, text=title, font=ctk.CTkFont(size=20, weight="bold"))
-        title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
-
-        for i, (label_text, entry_placeholder) in enumerate(fields.items(), start=1):
-            self.create_input_field(frame, label_text, entry_placeholder, i)
-
         frame.grid_columnconfigure(1, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+
+        # Frame scrollable para conteúdo
+        content_frame = ctk.CTkScrollableFrame(frame, fg_color="transparent")
+        content_frame.grid(row=0, column=0, columnspan=2, sticky="nsew", padx=20, pady=20)
+        content_frame.grid_columnconfigure(1, weight=1)
+
+        # Título
+        title_label = ctk.CTkLabel(content_frame, text=title, font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+
+        # Dicionário para armazenar as referências dos campos e mensagens de erro
+        self.software_type_fields = {}
+        self.error_labels = {}
+
+        # Criar campos
+        for i, (label_text, entry_placeholder) in enumerate(fields.items(), start=1):
+            # Label do campo
+            ctk.CTkLabel(content_frame, text=f"{label_text}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
+                row=i*2-1, column=0, padx=(0, 15), pady=5, sticky="e"
+            )
+            
+            # Campo de entrada
+            entry = ctk.CTkEntry(content_frame, placeholder_text=entry_placeholder, width=300)
+            entry.grid(row=i*2-1, column=1, pady=5, sticky="ew")
+            self.software_type_fields[label_text] = entry
+            
+            # Label de erro
+            error_label = ctk.CTkLabel(content_frame, text="", text_color="#FF4444", font=ctk.CTkFont(size=12))
+            error_label.grid(row=i*2, column=1, sticky="w")
+            self.error_labels[label_text] = error_label
+            
+            # Evento de validação
+            entry.bind("<KeyRelease>", lambda e, lbl=label_text: self.validate_field(lbl))
+
+        # Frame para botões no final (fora do scrollable frame)
+        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame.grid(row=1, column=0, columnspan=2, sticky="e", padx=20, pady=(0, 20))
+
+        # Botão Next
+        next_btn = ctk.CTkButton(button_frame, text="Next", width=100, command=self.validate_and_proceed)
+        next_btn.pack(pady=10)
+
         return frame
 
-    def create_input_field(self, frame: ctk.CTkFrame, labelTx, placeholder, index):
-            ctk.CTkLabel(frame, text=f"{labelTx}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
-                row=index, column=0, padx=15, pady=5, sticky="e"
-            )
-            entry = ctk.CTkEntry(frame, placeholder_text=placeholder, width=300)
-            entry.grid(row=index, column=1, padx=10, pady=5, sticky="ew")
-    
+    def validate_field(self, field_label):
+        """Valida um campo específico e atualiza sua mensagem de erro"""
+        widget = self.software_type_fields[field_label]
+        error_label = self.error_labels[field_label]
+        
+        if not widget.get().strip():
+            error_label.configure(text="This field is required")
+        else:
+            error_label.configure(text="")
+
     def create_select_field(self, frame: ctk.CTkFrame, labelTx, select_values, index):
         ctk.CTkLabel(frame, text=f"{labelTx}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
             row=index, column=0, padx=15, pady=5, sticky="e"
@@ -162,37 +201,71 @@ class ModCreatorApp:
         title_label = ctk.CTkLabel(frame, text="Sub Feature", font=ctk.CTkFont(size=20, weight="bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
 
+        # Dicionário para armazenar as referências dos campos e mensagens de erro
+        self.sub_feature_fields = {}
+        self.sub_feature_error_labels = {}
+
         for i, (label_text, entry_placeholder) in enumerate(labels.items(), start=1):
+            # Criar o label do campo
+            ctk.CTkLabel(frame, text=f"{label_text}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
+                row=i*2-1, column=0, padx=15, pady=5, sticky="e"
+            )
+            
             if label_text == "Level":
-                self.create_select_field(frame, "Level", ["1", "2"], i)
+                entry = ctk.CTkOptionMenu(frame, values=["1", "2"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
             elif label_text == "Dev Time" or label_text == "Code Art":
-                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+                entry = ctk.CTkOptionMenu(frame, values=["1", "2", "3", "4", "5"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
             elif label_text.find("Submarket") != -1:
-                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+                entry = ctk.CTkOptionMenu(frame, values=["1", "2", "3", "4", "5"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
             elif label_text == "Feature":
                 # Inicializar com lista vazia se ainda não houver features
                 feature_names = []
                 if hasattr(self, 'spec_feature_rows'):
                     feature_names = [row[0].get() for row in self.spec_feature_rows if row[0].get().strip()]
-                self.create_select_field(frame, label_text, feature_names if feature_names else [""], i)
+                entry = ctk.CTkOptionMenu(frame, values=feature_names if feature_names else [""], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
             else:
-                self.create_input_field(frame, label_text, entry_placeholder, i)
+                entry = ctk.CTkEntry(frame, placeholder_text=entry_placeholder, width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
             
-            if (len(labels) == i+1):
-                # Criar um frame para os botões
-                button_frame = ctk.CTkFrame(frame, fg_color="transparent")
-                button_frame.grid(row=i+2, column=1, pady=10, sticky="ew")
-                
-                # Botão Back
-                back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Sub Features"))
-                back_btn.pack(side="left", padx=5)
-                
-                # Botão Save
-                save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_sub_feature)
-                save_btn.pack(side="left", padx=5)
+            self.sub_feature_fields[label_text] = entry
+            
+            # Criar label de erro (inicialmente vazio)
+            error_label = ctk.CTkLabel(frame, text="", text_color="#FF4444", font=ctk.CTkFont(size=12))
+            error_label.grid(row=i*2, column=1, sticky="w", padx=10)
+            self.sub_feature_error_labels[label_text] = error_label
+            
+            # Bind do evento de digitação para validar o campo (apenas para campos de texto)
+            if isinstance(entry, ctk.CTkEntry):
+                entry.bind("<KeyRelease>", lambda e, lbl=label_text: self.validate_sub_feature_field(lbl))
+
+        # Criar um frame para os botões
+        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame.grid(row=len(labels)*2+1, column=1, pady=20, sticky="e")
+        
+        # Botão Back
+        back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Sub Features"))
+        back_btn.pack(side="left", padx=5)
+        
+        # Botão Save
+        save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_sub_feature)
+        save_btn.pack(side="left", padx=5)
 
         frame.grid_columnconfigure(1, weight=1)
         return frame
+
+    def validate_sub_feature_field(self, field_label):
+        """Valida um campo específico do formulário de sub-feature e atualiza sua mensagem de erro"""
+        widget = self.sub_feature_fields[field_label]
+        error_label = self.sub_feature_error_labels[field_label]
+        
+        if isinstance(widget, ctk.CTkEntry) and not widget.get().strip():
+            error_label.configure(text="This field is required")
+        else:
+            error_label.configure(text="")
 
     def add_sub_feature_row(self, start_row=None):
         if start_row is None:
@@ -362,23 +435,30 @@ class ModCreatorApp:
             frame.tkraise()
 
     def save_new_sub_feature(self):
+        # Verificar se todos os campos foram preenchidos
+        has_errors = False
+        first_error_field = None
+        
+        # Validar todos os campos
+        for label, widget in self.sub_feature_fields.items():
+            if isinstance(widget, ctk.CTkEntry) and not widget.get().strip():
+                self.sub_feature_error_labels[label].configure(text="This field is required")
+                if not first_error_field:
+                    first_error_field = widget
+                has_errors = True
+
+        if has_errors:
+            if first_error_field:
+                first_error_field.focus_set()
+            return
+
         # Coletar dados do formulário
         entries = {}
-        for widget in self.frames["Add Sub Feature"].winfo_children():
-            if isinstance(widget, (ctk.CTkEntry, ctk.CTkOptionMenu)):
-                # Pega o placeholder text como chave para CTkEntry
-                if isinstance(widget, ctk.CTkEntry):
-                    key = widget.cget("placeholder_text")
-                # Para OptionMenu, pega o texto do label associado
-                else:
-                    # Encontra o label associado (está na mesma linha do grid)
-                    grid_info = widget.grid_info()
-                    for w in self.frames["Add Sub Feature"].winfo_children():
-                        if isinstance(w, ctk.CTkLabel):
-                            if w.grid_info()["row"] == grid_info["row"]:
-                                key = w.cget("text").replace(":", "")
-                                break
-                entries[key] = widget.get()
+        for label, widget in self.sub_feature_fields.items():
+            if isinstance(widget, ctk.CTkEntry):
+                entries[label] = widget.get()
+            else:  # CTkOptionMenu
+                entries[label] = widget.get()
 
         # Adicionar nova linha na listagem de sub-features
         self.add_sub_feature_row()
@@ -386,16 +466,16 @@ class ModCreatorApp:
         
         # Mapear os valores nos campos corretos
         field_mapping = {
-            "Sub feature name": 0,  # Name
+            "Name": 0,
             "Description": 1,
             "Level": 2,
-            "Year of Unlock": 3,
+            "Unlock Year": 3,
             "Dev Time": 4,
             "Submarket 1": 5,
             "Submarket 2": 6,
             "Submarket 3": 7,
             "Code Art": 8,
-            "Feature": 11  # Adicionando o mapeamento para o campo Feature
+            "Feature": 11
         }
 
         # Preencher os campos da nova linha
@@ -407,7 +487,7 @@ class ModCreatorApp:
                     row[row_index].insert(0, entries[form_field])
 
         # Limpar os campos do formulário
-        for widget in self.frames["Add Sub Feature"].winfo_children():
+        for widget in self.sub_feature_fields.values():
             if isinstance(widget, ctk.CTkEntry):
                 widget.delete(0, "end")
             elif isinstance(widget, ctk.CTkOptionMenu):
@@ -468,50 +548,90 @@ class ModCreatorApp:
         title_label = ctk.CTkLabel(frame, text="New Feature", font=ctk.CTkFont(size=20, weight="bold"))
         title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
 
+        # Dicionário para armazenar as referências dos campos e mensagens de erro
+        self.feature_fields = {}
+        self.feature_error_labels = {}
+
         for i, (label_text, entry_placeholder) in enumerate(labels.items(), start=1):
-            if label_text == "Code Art":
-                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
-            elif label_text.find("Submarket") != -1:
-                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
-            elif label_text in ["Server", "Optional"]:
-                self.create_select_field(frame, label_text, ["True", "False"], i)
-            else:
-                self.create_input_field(frame, label_text, entry_placeholder, i)
+            # Criar o label do campo
+            ctk.CTkLabel(frame, text=f"{label_text}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
+                row=i*2-1, column=0, padx=15, pady=5, sticky="e"
+            )
             
-            if (len(labels) == i+1):
-                # Criar um frame para os botões
-                button_frame = ctk.CTkFrame(frame, fg_color="transparent")
-                button_frame.grid(row=i+2, column=1, pady=10, sticky="ew")
-                
-                # Botão Back
-                back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Spec Features"))
-                back_btn.pack(side="left", padx=5)
-                
-                # Botão Save
-                save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_feature)
-                save_btn.pack(side="left", padx=5)
+            if label_text == "Code Art":
+                entry = ctk.CTkOptionMenu(frame, values=["1", "2", "3", "4", "5"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
+            elif label_text.find("Submarket") != -1:
+                entry = ctk.CTkOptionMenu(frame, values=["1", "2", "3", "4", "5"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
+            elif label_text in ["Server", "Optional"]:
+                entry = ctk.CTkOptionMenu(frame, values=["True", "False"], width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
+            else:
+                entry = ctk.CTkEntry(frame, placeholder_text=entry_placeholder, width=300)
+                entry.grid(row=i*2-1, column=1, padx=10, pady=5, sticky="ew")
+            
+            self.feature_fields[label_text] = entry
+            
+            # Criar label de erro (inicialmente vazio)
+            error_label = ctk.CTkLabel(frame, text="", text_color="#FF4444", font=ctk.CTkFont(size=12))
+            error_label.grid(row=i*2, column=1, sticky="w", padx=10)
+            self.feature_error_labels[label_text] = error_label
+            
+            # Bind do evento de digitação para validar o campo (apenas para campos de texto)
+            if isinstance(entry, ctk.CTkEntry):
+                entry.bind("<KeyRelease>", lambda e, lbl=label_text: self.validate_feature_field(lbl))
+
+        # Criar um frame para os botões
+        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame.grid(row=len(labels)*2+1, column=1, pady=20, sticky="e")
+        
+        # Botão Back
+        back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Spec Features"))
+        back_btn.pack(side="left", padx=5)
+        
+        # Botão Save
+        save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_feature)
+        save_btn.pack(side="left", padx=5)
 
         frame.grid_columnconfigure(1, weight=1)
         return frame
 
+    def validate_feature_field(self, field_label):
+        """Valida um campo específico do formulário de feature e atualiza sua mensagem de erro"""
+        widget = self.feature_fields[field_label]
+        error_label = self.feature_error_labels[field_label]
+        
+        if isinstance(widget, ctk.CTkEntry) and not widget.get().strip():
+            error_label.configure(text="This field is required")
+        else:
+            error_label.configure(text="")
+
     def save_new_feature(self):
+        # Verificar se todos os campos foram preenchidos
+        has_errors = False
+        first_error_field = None
+        
+        # Validar todos os campos
+        for label, widget in self.feature_fields.items():
+            if isinstance(widget, ctk.CTkEntry) and not widget.get().strip():
+                self.feature_error_labels[label].configure(text="This field is required")
+                if not first_error_field:
+                    first_error_field = widget
+                has_errors = True
+
+        if has_errors:
+            if first_error_field:
+                first_error_field.focus_set()
+            return
+
         # Coletar dados do formulário
         entries = {}
-        for widget in self.frames["Add Feature"].winfo_children():
-            if isinstance(widget, (ctk.CTkEntry, ctk.CTkOptionMenu)):
-                # Pega o placeholder text como chave para CTkEntry
-                if isinstance(widget, ctk.CTkEntry):
-                    key = widget.cget("placeholder_text")
-                # Para OptionMenu, pega o texto do label associado
-                else:
-                    # Encontra o label associado (está na mesma linha do grid)
-                    grid_info = widget.grid_info()
-                    for w in self.frames["Add Feature"].winfo_children():
-                        if isinstance(w, ctk.CTkLabel):
-                            if w.grid_info()["row"] == grid_info["row"]:
-                                key = w.cget("text").replace(":", "")
-                                break
-                entries[key] = widget.get()
+        for label, widget in self.feature_fields.items():
+            if isinstance(widget, ctk.CTkEntry):
+                entries[label] = widget.get()
+            else:  # CTkOptionMenu
+                entries[label] = widget.get()
 
         # Adicionar nova linha na listagem de features
         self.add_spec_feature_row()
@@ -519,19 +639,19 @@ class ModCreatorApp:
         
         # Mapear os valores nos campos corretos
         field_mapping = {
-            "Feature name": 0,  # Name
-            "Feature specification": 1,  # Spec
+            "Name": 0,
+            "Spec": 1,
             "Description": 2,
             "Dependencies": 3,
-            "Unlock year": 4,
-            "Development time": 5,
+            "Unlock": 4,
+            "DevTime": 5,
             "Submarket 1": 6,
             "Submarket 2": 7,
             "Submarket 3": 8,
             "Code Art": 9,
             "Server": 10,
             "Optional": 11,
-            "Categories": 12
+            "Software Categories": 12
         }
 
         # Preencher os campos da nova linha
@@ -540,7 +660,7 @@ class ModCreatorApp:
                 row[row_index].insert(0, entries[form_field])
 
         # Limpar os campos do formulário
-        for widget in self.frames["Add Feature"].winfo_children():
+        for widget in self.feature_fields.values():
             if isinstance(widget, ctk.CTkEntry):
                 widget.delete(0, "end")
             elif isinstance(widget, ctk.CTkOptionMenu):
@@ -548,6 +668,9 @@ class ModCreatorApp:
 
         # Atualizar os dropdowns que dependem das features
         self.update_dropdowns()
+        
+        # Atualizar o estado do botão Sub Features
+        self.update_sub_features_button()
 
         # Voltar para a tela de Spec Features
         self.show_frame("Spec Features")
@@ -570,6 +693,35 @@ class ModCreatorApp:
 
         self.spec_feature_rows.append(entries)
         self.update_dropdowns()
+
+    def validate_and_proceed(self):
+        # Verificar se todos os campos foram preenchidos
+        has_errors = False
+        first_error_field = None
+        
+        # Validar todos os campos
+        for label in self.software_type_fields:
+            if not self.software_type_fields[label].get().strip():
+                self.error_labels[label].configure(text="This field is required")
+                if not first_error_field:
+                    first_error_field = self.software_type_fields[label]
+                has_errors = True
+
+        if has_errors:
+            if first_error_field:
+                first_error_field.focus_set()
+            return
+
+        # Se todos os campos estão preenchidos, habilitar o botão Spec Features
+        self.buttons["Spec Features"].configure(state="normal")
+        
+        # Mudar para o frame de Spec Features
+        self.show_frame("Spec Features")
+
+    def update_sub_features_button(self):
+        # Habilita o botão Sub Features apenas se houver features criadas
+        has_features = any(row[0].get().strip() for row in self.spec_feature_rows)
+        self.buttons["Sub Features"].configure(state="normal" if has_features else "disabled")
 
  
 if __name__ == "__main__":

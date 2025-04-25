@@ -4,6 +4,7 @@ from frames import (
     NewFeatureFrame, NewSubFeatureFrame
 )
 from mod_exporter import ModExporter
+from tyd_importer import TydImporter
 
 class ModCreatorApp:
     def __init__(self, root: ctk.CTk):
@@ -43,6 +44,11 @@ class ModCreatorApp:
 
     def _create_sidebar_buttons(self):
         self.buttons = {
+            "Import": ctk.CTkButton(
+                self.sidebar,
+                text="Import TYD",
+                command=self.import_tyd
+            ),
             "Software Type": ctk.CTkButton(
                 self.sidebar, 
                 text="Software Type", 
@@ -196,6 +202,95 @@ class ModCreatorApp:
         sub_features = self.frames["Sub Features"].get_data()
         
         ModExporter.export_mod(software_type_data, spec_features, sub_features)
+
+    def import_tyd(self):
+        result = TydImporter.import_tyd()
+        if result:
+            software_data, spec_features, sub_features = result
+            
+            # Clear existing data
+            self.frames["Software Type"].clear_fields()
+            self.frames["Spec Features"].feature_rows.clear()
+            self.frames["Sub Features"].sub_feature_rows.clear()
+            
+            # Load software type data
+            for field, value in software_data.items():
+                if field in self.frames["Software Type"].fields:
+                    widget = self.frames["Software Type"].fields[field]
+                    if isinstance(widget, ctk.CTkEntry):
+                        widget.insert(0, value)
+                    elif isinstance(widget, ctk.CTkOptionMenu):
+                        widget.set(value)
+            
+            # Load spec features
+            for feature in spec_features:
+                entries = self.frames["Spec Features"].add_row()
+                # Primeiro limpa todos os campos
+                self.frames["Spec Features"].clear_row_entries(entries)
+                
+                # Agora preenche com os dados corretos
+                if feature.get("Name"):
+                    entries[0].insert(0, feature["Name"])
+                if feature.get("Spec"):
+                    entries[1].insert(0, feature["Spec"])
+                if feature.get("Description"):
+                    entries[2].insert(0, feature["Description"])
+                if feature.get("Dependencies"):
+                    entries[3].insert(0, feature["Dependencies"])
+                if feature.get("Unlock"):
+                    entries[4].insert(0, feature["Unlock"])
+                if feature.get("DevTime"):
+                    entries[5].insert(0, feature["DevTime"])
+                if feature.get("Submarket 1"):
+                    entries[6].insert(0, feature["Submarket 1"])
+                if feature.get("Submarket 2"):
+                    entries[7].insert(0, feature["Submarket 2"])
+                if feature.get("Submarket 3"):
+                    entries[8].insert(0, feature["Submarket 3"])
+                if feature.get("CodeArt"):
+                    entries[9].set(feature["CodeArt"])
+                if feature.get("Server"):
+                    entries[10].set(feature["Server"])
+                if feature.get("Optional"):
+                    entries[11].set(feature["Optional"])
+                if feature.get("Software Categories"):
+                    entries[12].insert(0, feature["Software Categories"])
+            
+            # Load sub features
+            for sub_feature in sub_features:
+                entries = self.frames["Sub Features"].add_row()
+                # Primeiro limpa todos os campos
+                self.frames["Sub Features"].clear_row_entries(entries)
+                
+                # Agora preenche com os dados corretos
+                field_mapping = {
+                    "Name": 0,
+                    "Description": 1,
+                    "Level": 2,
+                    "Unlock": 3,
+                    "DevTime": 4,
+                    "Submarket 1": 5,
+                    "Submarket 2": 6,
+                    "Submarket 3": 7,
+                    "CodeArt": 8,
+                    "Server": 9,
+                    "Software Categories": 10,
+                    "Feature": 11
+                }
+                
+                for field, index in field_mapping.items():
+                    value = sub_feature.get(field)
+                    if value is not None:
+                        if isinstance(entries[index], ctk.CTkEntry):
+                            entries[index].delete(0, "end")
+                            entries[index].insert(0, value)
+                        elif isinstance(entries[index], ctk.CTkOptionMenu):
+                            entries[index].set(str(value))
+            
+            # Enable buttons and show software type frame
+            self.buttons["Spec Features"].configure(state="normal")
+            self.buttons["Sub Features"].configure(state="normal")
+            self.show_frame("Software Type")
 
 def main():
     root = ctk.CTk()

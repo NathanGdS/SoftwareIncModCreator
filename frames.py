@@ -121,6 +121,13 @@ class SoftwareTypeFrame(BaseFrame):
     def get_data(self):
         return {label: widget.get() for label, widget in self.fields.items()}
 
+    def clear_fields(self):
+        for widget in self.fields.values():
+            if isinstance(widget, ctk.CTkEntry):
+                widget.delete(0, "end")
+            elif isinstance(widget, ctk.CTkOptionMenu):
+                widget.set(widget.cget("values")[0])
+
 class SpecFeaturesFrame(BaseFrame):
     def __init__(self, parent, on_back_callback, on_add_callback, on_next_callback):
         super().__init__(parent, corner_radius=15)
@@ -227,6 +234,14 @@ class SpecFeaturesFrame(BaseFrame):
             })
         return features
 
+    def clear_row_entries(self, entries):
+        """Limpa todos os campos de uma linha"""
+        for entry in entries:
+            if isinstance(entry, ctk.CTkEntry):
+                entry.delete(0, "end")
+            elif isinstance(entry, ctk.CTkOptionMenu):
+                entry.set(entry.cget("values")[0])
+
 class SubFeaturesFrame(BaseFrame):
     def __init__(self, parent, on_back_callback, on_add_callback):
         super().__init__(parent, corner_radius=15)
@@ -306,6 +321,14 @@ class SubFeaturesFrame(BaseFrame):
                 "Software Feature": row[11].get()
             })
         return sub_features 
+
+    def clear_row_entries(self, entries):
+        """Limpa todos os campos de uma linha"""
+        for entry in entries:
+            if isinstance(entry, ctk.CTkEntry):
+                entry.delete(0, "end")
+            elif isinstance(entry, ctk.CTkOptionMenu):
+                entry.set(entry.cget("values")[0])
 
 class NewFeatureFrame(BaseFrame):
     def __init__(self, parent, on_back_callback, on_save_callback):

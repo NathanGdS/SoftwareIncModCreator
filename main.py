@@ -186,12 +186,23 @@ class ModCreatorApp:
         for i in range(13):  # 13 colunas
             self.spec_feature_scroll_frame.grid_columnconfigure(i, weight=1)
 
-        # Frame para o botão (fora do scrollable frame)
+        # Frame para os botões (fora do scrollable frame)
         button_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        button_frame.grid(row=2, column=0, sticky="w", padx=20, pady=(10, 20))
+        button_frame.grid(row=2, column=0, sticky="ew", padx=20, pady=(10, 20))
+        
+        # Frame para botão de adicionar (à esquerda)
+        add_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        add_button_frame.pack(side="left")
+        
+        # Frame para botão de voltar (à direita)
+        back_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        back_button_frame.pack(side="right")
         
         # Botão de adicionar
-        ctk.CTkButton(button_frame, text="+", width=30, command=lambda: self.show_frame("Add Feature")).pack(side="left")
+        ctk.CTkButton(add_button_frame, text="+", width=30, command=lambda: self.show_frame("Add Feature")).pack(side="left")
+        
+        # Botão de voltar
+        ctk.CTkButton(back_button_frame, text="Back", width=100, command=lambda: self.show_frame("Software Type")).pack(side="right")
 
         return frame
 
@@ -213,7 +224,24 @@ class ModCreatorApp:
             label = ctk.CTkLabel(self.sub_feature_scroll_frame, text=text, font=ctk.CTkFont(size=12, weight="bold"), anchor="w", width=120)
             label.grid(row=0, column=col, padx=5, pady=(5, 10), sticky="w")
 
-        ctk.CTkButton(frame, text="+", width=30, command=lambda: self.show_frame("Add Sub Feature")).pack(pady=15, anchor="w", padx=20)
+        # Frame para os botões
+        button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        button_frame.pack(fill="x", padx=20, pady=(10, 20))
+
+        # Frame para botão de adicionar (à esquerda)
+        add_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        add_button_frame.pack(side="left")
+        
+        # Frame para botão de voltar (à direita)
+        back_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        back_button_frame.pack(side="right")
+
+        # Botão de adicionar
+        ctk.CTkButton(add_button_frame, text="+", width=30, command=lambda: self.show_frame("Add Sub Feature")).pack(side="left")
+        
+        # Botão de voltar
+        ctk.CTkButton(back_button_frame, text="Back", width=100, command=lambda: self.show_frame("Spec Features")).pack(side="right")
+
         return frame
 
     def create_new_sub_feature_frame(self):

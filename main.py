@@ -11,6 +11,8 @@ class ModCreatorApp:
 
         self.frames = {}
         self.sub_feature_dropdowns = []
+        self.spec_feature_rows = []
+        self.sub_feature_rows = []
         self.create_frames()
 
         self._create_sidebar_buttons()
@@ -71,6 +73,8 @@ class ModCreatorApp:
             "Submarket Name Two": "",
             "Submarket Name Three": ""
         })
+        self.frames["Add Sub Feature"] = self.create_new_sub_feature_frame()
+        self.frames["Add Feature"] = self.create_new_feature_frame()
         self.frames["Spec Features"] = self.create_spec_features_frame()
         self.frames["Sub Features"] = self.create_sub_features_frame()
 
@@ -84,14 +88,29 @@ class ModCreatorApp:
         title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
 
         for i, (label_text, entry_placeholder) in enumerate(fields.items(), start=1):
-            ctk.CTkLabel(frame, text=f"{label_text}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
-                row=i, column=0, padx=15, pady=5, sticky="e"
-            )
-            entry = ctk.CTkEntry(frame, placeholder_text=entry_placeholder, width=300)
-            entry.grid(row=i, column=1, padx=10, pady=5, sticky="ew")
+            self.create_input_field(frame, label_text, entry_placeholder, i)
 
         frame.grid_columnconfigure(1, weight=1)
         return frame
+
+    def create_input_field(self, frame: ctk.CTkFrame, labelTx, placeholder, index):
+            ctk.CTkLabel(frame, text=f"{labelTx}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
+                row=index, column=0, padx=15, pady=5, sticky="e"
+            )
+            entry = ctk.CTkEntry(frame, placeholder_text=placeholder, width=300)
+            entry.grid(row=index, column=1, padx=10, pady=5, sticky="ew")
+    
+    def create_select_field(self, frame: ctk.CTkFrame, labelTx, select_values, index):
+        ctk.CTkLabel(frame, text=f"{labelTx}:", anchor="e", font=ctk.CTkFont(size=14)).grid(
+            row=index, column=0, padx=15, pady=5, sticky="e"
+        )
+        entry = ctk.CTkOptionMenu(frame, values=select_values, width=120)
+        entry.grid(row=index, column=1, padx=10, pady=5, sticky="ew")
+
+    def create_btn(self, frame: ctk.CTkFrame, btnTx, index, cmd):
+        entry = ctk.CTkButton(frame, text=btnTx, width=30, command=cmd)
+        entry.grid(row=index, column=1, padx=10, pady=5, sticky="ew")
+
 
     def create_spec_features_frame(self):
         frame = ctk.CTkFrame(self.main_frame_container, corner_radius=15)
@@ -100,59 +119,98 @@ class ModCreatorApp:
         self.spec_feature_scroll_frame = ctk.CTkScrollableFrame(frame, orientation="horizontal", width=900, height=300)
         self.spec_feature_scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
-        self.spec_feature_rows = []
-        self.add_spec_feature_row()
-
-        ctk.CTkButton(frame, text="+", width=30, command=self.add_spec_feature_row).pack(pady=15, anchor="w", padx=20)
+        ctk.CTkButton(frame, text="+", width=30, command=lambda: self.show_frame("Add Feature")).pack(pady=15, anchor="w", padx=20)
         return frame
-
-    def add_spec_feature_row(self):
-        row_index = len(self.spec_feature_rows)
-        labels = [
-            "Name", "Spec", "Description", "Dependencies", "Unlock",
-            "DevTime", "Submarkets 1", "Submarket 2", "Submarket 3", "Code Art", "Server", "Optional", "Software Categories"
-        ]
-        entries = []
-
-        for col, label in enumerate(labels):
-            entry = ctk.CTkEntry(self.spec_feature_scroll_frame, placeholder_text=label, width=120)
-            entry.grid(row=row_index, column=col, padx=5, pady=2)
-            entries.append(entry)
-
-        # Set up name trace for dynamic dropdown update
-        entries[0].bind("<FocusOut>", lambda e: self.update_sub_feature_dropdowns())
-
-        self.spec_feature_rows.append(entries)
-        self.update_sub_feature_dropdowns()
 
     def create_sub_features_frame(self):
         frame = ctk.CTkFrame(self.main_frame_container, corner_radius=15)
         ctk.CTkLabel(frame, text="Sub Features", font=ctk.CTkFont(size=20, weight="bold")).pack(pady=(20, 10))
 
-        self.sub_feature_scroll_frame = ctk.CTkScrollableFrame(frame, orientation="horizontal", width=900, height=300)
+        # Scrollable frame que vai conter headers e linhas
+        self.sub_feature_scroll_frame = ctk.CTkScrollableFrame(frame, orientation="horizontal", width=1200, height=300)
         self.sub_feature_scroll_frame.pack(padx=10, pady=5, fill="both", expand=True)
 
-        self.sub_feature_rows = []
-        ctk.CTkButton(frame, text="+", width=30, command=self.add_sub_feature_row).pack(pady=15, anchor="w", padx=20)
+        # Cabeçalhos diretamente no grid da scroll_frame
+        headers = [
+            "Name", "Description", "Level", "Unlock Year", "Dev Time",
+            "Submarket 1", "Submarket 2", "Submarket 3",
+            "Code Art", "Server", "Software Categories", "Software Feature"
+        ]
+        for col, text in enumerate(headers):
+            label = ctk.CTkLabel(self.sub_feature_scroll_frame, text=text, font=ctk.CTkFont(size=12, weight="bold"), anchor="w", width=120)
+            label.grid(row=0, column=col, padx=5, pady=(5, 10), sticky="w")
 
-        self.add_sub_feature_row()
+        ctk.CTkButton(frame, text="+", width=30, command=lambda: self.show_frame("Add Sub Feature")).pack(pady=15, anchor="w", padx=20)
         return frame
 
-    def add_sub_feature_row(self):
-        print("Adding sub feature row")
+    def create_new_sub_feature_frame(self):
+        labels = {
+            "Name": "Sub feature name",
+            "Description": "Description",
+            "Level": "",
+            "Unlock Year": "Year of Unlock",
+            "Dev Time": "",
+            "Code Art": "",
+            "Submarket 1": "",
+            "Submarket 2": "",
+            "Submarket 3": "",
+            "Feature": ""
+        }
 
+        frame = ctk.CTkFrame(self.main_frame_container, corner_radius=15)
+
+        title_label = ctk.CTkLabel(frame, text="Sub Feature", font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
+
+        for i, (label_text, entry_placeholder) in enumerate(labels.items(), start=1):
+            if label_text == "Level":
+                self.create_select_field(frame, "Level", ["1", "2"], i)
+            elif label_text == "Dev Time" or label_text == "Code Art":
+                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+            elif label_text.find("Submarket") != -1:
+                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+            elif label_text == "Feature":
+                # Inicializar com lista vazia se ainda não houver features
+                feature_names = []
+                if hasattr(self, 'spec_feature_rows'):
+                    feature_names = [row[0].get() for row in self.spec_feature_rows if row[0].get().strip()]
+                self.create_select_field(frame, label_text, feature_names if feature_names else [""], i)
+            else:
+                self.create_input_field(frame, label_text, entry_placeholder, i)
+            
+            if (len(labels) == i+1):
+                # Criar um frame para os botões
+                button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+                button_frame.grid(row=i+2, column=1, pady=10, sticky="ew")
+                
+                # Botão Back
+                back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Sub Features"))
+                back_btn.pack(side="left", padx=5)
+                
+                # Botão Save
+                save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_sub_feature)
+                save_btn.pack(side="left", padx=5)
+
+        frame.grid_columnconfigure(1, weight=1)
+        return frame
+
+    def add_sub_feature_row(self, start_row=None):
+        if start_row is None:
+            start_row = len(self.sub_feature_rows) + 1  # +1 por causa dos headers
+
+        row_index = len(self.sub_feature_rows)
         labels = [
             "Name", "Description", "Level", "Unlock", "Dev Time",
             "Submarket 1", "Submarket 2", "Submarket 3", "Code Art", "Server", "Software Categories", "Software Feature"
         ]
-        self.sub_feature_rows.append(labels)
+        # self.sub_feature_rows.append(labels)
         entries = []
 
         for col, label in enumerate(labels):
             if label == "Level":
-                entry = ctk.CTkOptionMenu(self.sub_feature_scroll_frame, values=["1", "2"])
+                entry = ctk.CTkOptionMenu(self.sub_feature_scroll_frame, values=["1", "2"], width=120)
             elif label == "Software Feature":
-                entry = ctk.CTkOptionMenu(self.sub_feature_scroll_frame, values=[""])
+                entry = ctk.CTkOptionMenu(self.sub_feature_scroll_frame, values=[""], width=120)
                 self.sub_feature_dropdowns.append(entry)
             else:
                 entry = ctk.CTkEntry(self.sub_feature_scroll_frame, placeholder_text=label, width=120)
@@ -302,7 +360,217 @@ class ModCreatorApp:
         frame = self.frames.get(name)
         if frame:
             frame.tkraise()
- 
+
+    def save_new_sub_feature(self):
+        # Coletar dados do formulário
+        entries = {}
+        for widget in self.frames["Add Sub Feature"].winfo_children():
+            if isinstance(widget, (ctk.CTkEntry, ctk.CTkOptionMenu)):
+                # Pega o placeholder text como chave para CTkEntry
+                if isinstance(widget, ctk.CTkEntry):
+                    key = widget.cget("placeholder_text")
+                # Para OptionMenu, pega o texto do label associado
+                else:
+                    # Encontra o label associado (está na mesma linha do grid)
+                    grid_info = widget.grid_info()
+                    for w in self.frames["Add Sub Feature"].winfo_children():
+                        if isinstance(w, ctk.CTkLabel):
+                            if w.grid_info()["row"] == grid_info["row"]:
+                                key = w.cget("text").replace(":", "")
+                                break
+                entries[key] = widget.get()
+
+        # Adicionar nova linha na listagem de sub-features
+        self.add_sub_feature_row()
+        row = self.sub_feature_rows[-1]  # Pega a última linha adicionada
+        
+        # Mapear os valores nos campos corretos
+        field_mapping = {
+            "Sub feature name": 0,  # Name
+            "Description": 1,
+            "Level": 2,
+            "Year of Unlock": 3,
+            "Dev Time": 4,
+            "Submarket 1": 5,
+            "Submarket 2": 6,
+            "Submarket 3": 7,
+            "Code Art": 8,
+            "Feature": 11  # Adicionando o mapeamento para o campo Feature
+        }
+
+        # Preencher os campos da nova linha
+        for form_field, row_index in field_mapping.items():
+            if form_field in entries and entries[form_field]:
+                if isinstance(row[row_index], ctk.CTkOptionMenu):
+                    row[row_index].set(entries[form_field])
+                else:
+                    row[row_index].insert(0, entries[form_field])
+
+        # Limpar os campos do formulário
+        for widget in self.frames["Add Sub Feature"].winfo_children():
+            if isinstance(widget, ctk.CTkEntry):
+                widget.delete(0, "end")
+            elif isinstance(widget, ctk.CTkOptionMenu):
+                widget.set(widget.cget("values")[0])
+
+        # Voltar para a tela de Sub Features
+        self.show_frame("Sub Features")
+
+    def update_feature_select(self):
+        # Verificar se o frame existe antes de tentar atualizá-lo
+        if "Add Sub Feature" not in self.frames:
+            return
+
+        # Encontrar o select de Feature no frame Add Sub Feature
+        feature_select = None
+        for widget in self.frames["Add Sub Feature"].winfo_children():
+            if isinstance(widget, ctk.CTkOptionMenu):
+                # Encontra o label associado
+                grid_info = widget.grid_info()
+                for w in self.frames["Add Sub Feature"].winfo_children():
+                    if isinstance(w, ctk.CTkLabel):
+                        if w.grid_info()["row"] == grid_info["row"] and w.cget("text").replace(":", "") == "Feature":
+                            feature_select = widget
+                            break
+                if feature_select:
+                    break
+
+        if feature_select:
+            # Atualizar as opções com as features existentes
+            feature_names = [row[0].get() for row in self.spec_feature_rows if row[0].get().strip()]
+            feature_select.configure(values=feature_names if feature_names else [""])
+            if feature_names:
+                feature_select.set(feature_names[0])
+
+    def update_dropdowns(self):
+        self.update_sub_feature_dropdowns()
+        self.update_feature_select()
+
+    def create_new_feature_frame(self):
+        labels = {
+            "Name": "Feature name",
+            "Spec": "Feature specification",
+            "Description": "Description",
+            "Dependencies": "Dependencies",
+            "Unlock": "Unlock year",
+            "DevTime": "Development time in months",
+            "Submarket 1": "",
+            "Submarket 2": "",
+            "Submarket 3": "",
+            "Code Art": "",
+            "Server": "True/False",
+            "Optional": "True/False",
+            "Software Categories": "Categories"
+        }
+
+        frame = ctk.CTkFrame(self.main_frame_container, corner_radius=15)
+
+        title_label = ctk.CTkLabel(frame, text="New Feature", font=ctk.CTkFont(size=20, weight="bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=(20, 10))
+
+        for i, (label_text, entry_placeholder) in enumerate(labels.items(), start=1):
+            if label_text == "Code Art":
+                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+            elif label_text.find("Submarket") != -1:
+                self.create_select_field(frame, label_text, ["1", "2", "3", "4", "5"], i)
+            elif label_text in ["Server", "Optional"]:
+                self.create_select_field(frame, label_text, ["True", "False"], i)
+            else:
+                self.create_input_field(frame, label_text, entry_placeholder, i)
+            
+            if (len(labels) == i+1):
+                # Criar um frame para os botões
+                button_frame = ctk.CTkFrame(frame, fg_color="transparent")
+                button_frame.grid(row=i+2, column=1, pady=10, sticky="ew")
+                
+                # Botão Back
+                back_btn = ctk.CTkButton(button_frame, text="Back", width=100, command=lambda: self.show_frame("Spec Features"))
+                back_btn.pack(side="left", padx=5)
+                
+                # Botão Save
+                save_btn = ctk.CTkButton(button_frame, text="Save", width=100, command=self.save_new_feature)
+                save_btn.pack(side="left", padx=5)
+
+        frame.grid_columnconfigure(1, weight=1)
+        return frame
+
+    def save_new_feature(self):
+        # Coletar dados do formulário
+        entries = {}
+        for widget in self.frames["Add Feature"].winfo_children():
+            if isinstance(widget, (ctk.CTkEntry, ctk.CTkOptionMenu)):
+                # Pega o placeholder text como chave para CTkEntry
+                if isinstance(widget, ctk.CTkEntry):
+                    key = widget.cget("placeholder_text")
+                # Para OptionMenu, pega o texto do label associado
+                else:
+                    # Encontra o label associado (está na mesma linha do grid)
+                    grid_info = widget.grid_info()
+                    for w in self.frames["Add Feature"].winfo_children():
+                        if isinstance(w, ctk.CTkLabel):
+                            if w.grid_info()["row"] == grid_info["row"]:
+                                key = w.cget("text").replace(":", "")
+                                break
+                entries[key] = widget.get()
+
+        # Adicionar nova linha na listagem de features
+        self.add_spec_feature_row()
+        row = self.spec_feature_rows[-1]  # Pega a última linha adicionada
+        
+        # Mapear os valores nos campos corretos
+        field_mapping = {
+            "Feature name": 0,  # Name
+            "Feature specification": 1,  # Spec
+            "Description": 2,
+            "Dependencies": 3,
+            "Unlock year": 4,
+            "Development time": 5,
+            "Submarket 1": 6,
+            "Submarket 2": 7,
+            "Submarket 3": 8,
+            "Code Art": 9,
+            "Server": 10,
+            "Optional": 11,
+            "Categories": 12
+        }
+
+        # Preencher os campos da nova linha
+        for form_field, row_index in field_mapping.items():
+            if form_field in entries and entries[form_field]:
+                row[row_index].insert(0, entries[form_field])
+
+        # Limpar os campos do formulário
+        for widget in self.frames["Add Feature"].winfo_children():
+            if isinstance(widget, ctk.CTkEntry):
+                widget.delete(0, "end")
+            elif isinstance(widget, ctk.CTkOptionMenu):
+                widget.set(widget.cget("values")[0])
+
+        # Atualizar os dropdowns que dependem das features
+        self.update_dropdowns()
+
+        # Voltar para a tela de Spec Features
+        self.show_frame("Spec Features")
+
+    def add_spec_feature_row(self):
+        row_index = len(self.spec_feature_rows)
+        labels = [
+            "Name", "Spec", "Description", "Dependencies", "Unlock",
+            "DevTime", "Submarkets 1", "Submarket 2", "Submarket 3", "Code Art", "Server", "Optional", "Software Categories"
+        ]
+        entries = []
+
+        for col, label in enumerate(labels):
+            entry = ctk.CTkEntry(self.spec_feature_scroll_frame, placeholder_text=label, width=120)
+            entry.grid(row=row_index, column=col, padx=5, pady=2)
+            entries.append(entry)
+
+        # Set up name trace for dynamic dropdown update
+        entries[0].bind("<FocusOut>", lambda e: self.update_dropdowns())
+
+        self.spec_feature_rows.append(entries)
+        self.update_dropdowns()
+
  
 if __name__ == "__main__":
     root = ctk.CTk()

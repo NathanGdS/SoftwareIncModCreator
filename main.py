@@ -99,6 +99,9 @@ class ModCreatorApp:
         self.software_type_fields = {}
         self.error_labels = {}
 
+        # Lista de campos que devem ser option boxes True/False
+        boolean_fields = ["OS Supports", "Contract Software", "In House Software"]
+
         # Criar campos
         for i, (label_text, entry_placeholder) in enumerate(fields.items(), start=1):
             # Label do campo
@@ -107,8 +110,14 @@ class ModCreatorApp:
             )
             
             # Campo de entrada
-            entry = ctk.CTkEntry(content_frame, placeholder_text=entry_placeholder, width=300)
-            entry.grid(row=i*2-1, column=1, pady=5, sticky="ew")
+            if label_text in boolean_fields:
+                entry = ctk.CTkOptionMenu(content_frame, values=["True", "False"], width=300)
+                entry.grid(row=i*2-1, column=1, pady=5, sticky="ew")
+                entry.set("False")  # Valor padrão
+            else:
+                entry = ctk.CTkEntry(content_frame, placeholder_text=entry_placeholder, width=300)
+                entry.grid(row=i*2-1, column=1, pady=5, sticky="ew")
+            
             self.software_type_fields[label_text] = entry
             
             # Label de erro
@@ -116,8 +125,9 @@ class ModCreatorApp:
             error_label.grid(row=i*2, column=1, sticky="w")
             self.error_labels[label_text] = error_label
             
-            # Evento de validação
-            entry.bind("<KeyRelease>", lambda e, lbl=label_text: self.validate_field(lbl))
+            # Evento de validação (apenas para campos de texto)
+            if isinstance(entry, ctk.CTkEntry):
+                entry.bind("<KeyRelease>", lambda e, lbl=label_text: self.validate_field(lbl))
 
         # Frame para botões no final (fora do scrollable frame)
         button_frame = ctk.CTkFrame(frame, fg_color="transparent")
@@ -131,10 +141,13 @@ class ModCreatorApp:
 
     def validate_field(self, field_label):
         """Valida um campo específico e atualiza sua mensagem de erro"""
+        # Campos que não são obrigatórios
+        optional_fields = ["Unlock Year", "Name Generator"]
+        
         widget = self.software_type_fields[field_label]
         error_label = self.error_labels[field_label]
         
-        if not widget.get().strip():
+        if field_label not in optional_fields and not widget.get().strip():
             error_label.configure(text="This field is required")
         else:
             error_label.configure(text="")
@@ -695,24 +708,34 @@ class ModCreatorApp:
         self.update_dropdowns()
 
     def validate_and_proceed(self):
-        # Verificar se todos os campos foram preenchidos
+        # Campos que não são obrigatórios
+        optional_fields = ["Unlock Year", "Name Generator"]
+        
+        # Verificar se todos os campos obrigatórios foram preenchidos
         has_errors = False
         first_error_field = None
         
         # Validar todos os campos
         for label in self.software_type_fields:
-            if not self.software_type_fields[label].get().strip():
+            if label not in optional_fields and not self.software_type_fields[label].get().strip():
                 self.error_labels[label].configure(text="This field is required")
                 if not first_error_field:
                     first_error_field = self.software_type_fields[label]
                 has_errors = True
+            else:
+                self.error_labels[label].configure(text="")
 
         if has_errors:
             if first_error_field:
                 first_error_field.focus_set()
             return
 
-        # Se todos os campos estão preenchidos, habilitar o botão Spec Features
+        # Se o Unlock Year não foi preenchido, define o valor default
+        unlock_year_field = self.software_type_fields["Unlock Year"]
+        if not unlock_year_field.get().strip():
+            unlock_year_field.insert(0, "1970")
+
+        # Se todos os campos obrigatórios estão preenchidos, habilitar o botão Spec Features
         self.buttons["Spec Features"].configure(state="normal")
         
         # Mudar para o frame de Spec Features

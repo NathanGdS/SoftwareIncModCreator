@@ -194,15 +194,25 @@ class ModCreatorApp:
         add_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
         add_button_frame.pack(side="left")
         
-        # Frame para botão de voltar (à direita)
-        back_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
-        back_button_frame.pack(side="right")
+        # Frame para botões à direita
+        right_button_frame = ctk.CTkFrame(button_frame, fg_color="transparent")
+        right_button_frame.pack(side="right")
         
         # Botão de adicionar
         ctk.CTkButton(add_button_frame, text="+", width=30, command=lambda: self.show_frame("Add Feature")).pack(side="left")
         
+        # Botão Add Sub Features (desabilitado inicialmente)
+        self.add_sub_features_btn = ctk.CTkButton(
+            right_button_frame, 
+            text="Add Sub Features", 
+            width=120, 
+            command=lambda: self.show_frame("Sub Features"),
+            state="disabled"
+        )
+        self.add_sub_features_btn.pack(side="right", padx=(5, 0))
+        
         # Botão de voltar
-        ctk.CTkButton(back_button_frame, text="Back", width=100, command=lambda: self.show_frame("Software Type")).pack(side="right")
+        ctk.CTkButton(right_button_frame, text="Back", width=100, command=lambda: self.show_frame("Software Type")).pack(side="right", padx=5)
 
         return frame
 
@@ -747,6 +757,10 @@ class ModCreatorApp:
 
         # Atualizar os dropdowns que dependem das features
         self.update_dropdowns()
+        
+        # Habilitar o botão Add Sub Features se houver pelo menos uma feature
+        if hasattr(self, 'add_sub_features_btn'):
+            self.add_sub_features_btn.configure(state="normal")
         
         # Atualizar o estado do botão Sub Features
         self.update_sub_features_button()

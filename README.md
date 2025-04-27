@@ -65,6 +65,34 @@ python main.py
    - Export mods to .tyd format
    - Import existing mods
 
+## 🧪 Running Tests
+
+The project uses pytest for testing. To run the tests:
+
+1. Run all tests:
+
+```bash
+pytest tests/ -v
+```
+
+2. Run specific test file:
+
+```bash
+pytest tests/test_tyd_importer.py -v
+```
+
+3. Run specific test case:
+
+```bash
+pytest tests/test_tyd_importer.py::TestTydImporter::test_extract_value -v
+```
+
+4. Run tests with coverage report:
+
+```bash
+pytest tests/ --cov=. --cov-report=term-missing
+```
+
 ## 📁 Project Structure
 
 - `main.py`: Main program file
@@ -73,12 +101,17 @@ python main.py
 - `tyd_importer.py`: Mod import functions
 - `name_gen.txt`: Name list for random generation
 - `requirements.txt`: Project dependencies
+- `tests/`: Test files
+  - `test_tyd_importer.py`: Tests for TYD import functionality
+  - `test_mod_exporter.py`: Tests for mod export functionality
 
 ## 🔧 Dependencies
 
 - customtkinter: Modern GUI interface
 - pillow: Image processing
 - darkdetect: Automatic system theme detection
+- pytest: Testing framework
+- pytest-cov: Test coverage reporting
 
 ## 🤝 Contributing
 
@@ -97,6 +130,7 @@ Contributions are always welcome! Feel free to:
 - [ ] Advanced field validation
 - [ ] Mod templates support
 - [ ] Mod versioning system
+- [ ] Increase test coverage
 
 ## 📞 Support
 

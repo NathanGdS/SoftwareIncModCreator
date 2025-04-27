@@ -24,7 +24,8 @@ class ModExporter:
         return ""
 
     @staticmethod
-    def export_mod(software_type_data, spec_features, sub_features):
+    def export_mod_to_string(software_type_data, spec_features, sub_features):
+        """Export mod data to a string without saving to file (for testing)"""
         software_name = software_type_data.get("Software Name", "Unnamed Software")
 
         tyd = f"""SoftwareType
@@ -76,39 +77,39 @@ class ModExporter:
                 tyd += f'\n            DevTime {sf["DevTime"]}'
             
             # Add submarkets if any exists
-            submarkets = [sf['Submarket 1'], sf['Submarket 2'], sf['Submarket 3']]
+            submarkets = [sf.get('Submarket 1', ''), sf.get('Submarket 2', ''), sf.get('Submarket 3', '')]
             if any(submarkets):
                 submarkets_str = "; ".join(str(s) for s in submarkets if s)
                 tyd += f'\n            SubmarketNames [ {submarkets_str} ]'
             
-            if sf['CodeArt']:
+            if sf.get('CodeArt'):
                 tyd += f'\n            CodeArt {sf["CodeArt"]}'
-            if sf['Server'] and sf['Server'].lower() != 'false':
+            if sf.get('Server') and sf['Server'].lower() != 'false':
                 tyd += f'\n            Server {ModExporter.to_bool(sf["Server"])}'
-            if sf['Optional'] and sf['Optional'].lower() != 'false':
+            if sf.get('Optional') and sf['Optional'].lower() != 'false':
                 tyd += f'\n            Optional {ModExporter.to_bool(sf["Optional"])}'
-            if sf['Software Categories']:
+            if sf.get('Software Categories'):
                 tyd += f'\n            Categories [ {sf["Software Categories"]} ]'
 
             # Add sub-features
             tyd += "\n            Features\n            ["
             
             for sub in sub_features:
-                if sub['Software Feature'] == sf['Name'] and sub['Name']:  # Only add if it has a name and matches parent feature
+                if sub.get('Software Feature') == sf['Name'] and sub.get('Name'):
                     tyd += "\n                {"
                     tyd += f'\n                    Name "{sub["Name"]}"'
                     
-                    if sub['Description']:
+                    if sub.get('Description'):
                         tyd += f'\n                    Description "{sub["Description"]}"'
-                    if sub['Level']:
+                    if sub.get('Level'):
                         tyd += f'\n                    Level {sub["Level"]}'
-                    if sub['DevTime']:
+                    if sub.get('DevTime'):
                         tyd += f'\n                    DevTime {sub["DevTime"]}'
-                    if sub['CodeArt']:
+                    if sub.get('CodeArt'):
                         tyd += f'\n                    CodeArt {sub["CodeArt"]}'
                     
                     # Add submarkets if any exists
-                    submarkets = [sub['Submarket 1'], sub['Submarket 2'], sub['Submarket 3']]
+                    submarkets = [sub.get('Submarket 1', ''), sub.get('Submarket 2', ''), sub.get('Submarket 3', '')]
                     if any(submarkets):
                         submarkets_str = "; ".join(str(s) for s in submarkets if s)
                         tyd += f'\n                    Submarkets [ {submarkets_str} ]'
@@ -119,7 +120,13 @@ class ModExporter:
             tyd += "\n        }"  # Close feature object
 
         tyd += "\n    ]\n}"  # Close main Features array and SoftwareType
+        return tyd
 
+    @staticmethod
+    def export_mod(software_type_data, spec_features, sub_features):
+        """Export mod data to a file"""
+        tyd = ModExporter.export_mod_to_string(software_type_data, spec_features, sub_features)
+        
         file_path = filedialog.asksaveasfilename(
             defaultextension=".tyd",
             filetypes=[("TYD Files", "*.tyd")],
